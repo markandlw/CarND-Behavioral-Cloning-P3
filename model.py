@@ -27,7 +27,13 @@ def readin_image_angle(data_row):
     img_left = cv2.cvtColor(cv2.imread(path_prefix + data_row[1].strip()),cv2.COLOR_BGR2YUV)
     img_right = cv2.cvtColor(cv2.imread(path_prefix + data_row[2].strip()),cv2.COLOR_BGR2YUV)
 
-    return [img_center, img_left, img_right],[steering_center, steering_left, steering_right]
+    flip_left = np.fliplr(img_left)
+    flip_steering_left = -steering_left
+
+    flip_right = np.fliplr(img_right)
+    flip_steering_right = -steering_right
+
+    return [img_center, img_left, img_right, flip_left, flip_right],[steering_center, steering_left, steering_right, flip_steering_left, flip_steering_right]
 
 def generator(samples, batch_size=32):
     num_samples = len(samples)
@@ -56,7 +62,7 @@ train_generator = generator(train_samples, batch_size=32)
 validation_generator = generator(validation_samples, batch_size=32)
 
 model = Sequential()
-model.add(Cropping2D(cropping=((60,30), (0,0)), input_shape=(160,320,3)))
+model.add(Cropping2D(cropping=((60,20), (0,0)), input_shape=(160,320,3)))
 model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 model.add(Convolution2D(24, 5, 5, subsample=(2,2)))
 model.add(ELU())
@@ -81,8 +87,8 @@ model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
 model.summary()
-model.fit_generator(train_generator, samples_per_epoch=len(train_samples) * 3, 
+model.fit_generator(train_generator, samples_per_epoch=len(train_samples) * 5, 
                     validation_data=validation_generator,
-                    nb_val_samples=len(validation_samples) * 3, 
-                    nb_epoch=4)
+                    nb_val_samples=len(validation_samples) * 5, 
+                    nb_epoch=3)
 model.save('model.h5')
