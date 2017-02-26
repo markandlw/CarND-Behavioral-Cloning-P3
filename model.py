@@ -10,20 +10,22 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
-from keras.layers import Lambda
+from keras.layers import Lambda, Cropping2D
+from keras.layers.advanced_activations import ELU
 
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
+path_prefix='./data/'
 def readin_image_angle(data_row):
     steering_center = data_row[3]
 
-    correction = 0.15
+    correction = 0.1
     steering_left = steering_center + correction
     steering_right = steering_center - correction
 
-    img_center = cv2.cvtColor(cv2.imread(data_row[0].strip()),cv2.COLOR_BGR2RGB)
-    img_left = cv2.cvtColor(cv2.imread(data_row[1].strip()),cv2.COLOR_BGR2RGB)
-    img_right = cv2.cvtColor(cv2.imread(data_row[2].strip()),cv2.COLOR_BGR2RGB)
+    img_center = cv2.cvtColor(cv2.imread(path_prefix + data_row[0].strip()),cv2.COLOR_BGR2YUV)
+    img_left = cv2.cvtColor(cv2.imread(path_prefix + data_row[1].strip()),cv2.COLOR_BGR2YUV)
+    img_right = cv2.cvtColor(cv2.imread(path_prefix + data_row[2].strip()),cv2.COLOR_BGR2YUV)
 
     return [img_center, img_left, img_right],[steering_center, steering_left, steering_right]
 
@@ -46,7 +48,7 @@ def generator(samples, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 
-driving_log = pd.read_csv('driving_log.csv')
+driving_log = pd.read_csv(path_prefix + 'driving_log.csv')
 
 train_samples, validation_samples = train_test_split(driving_log, test_size=0.2)
 
@@ -54,22 +56,33 @@ train_generator = generator(train_samples, batch_size=32)
 validation_generator = generator(validation_samples, batch_size=32)
 
 model = Sequential()
-#model.add(Cropping2D(cropping=((60,34), (0,0)), input_shape=(160,320,3)))
-model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=(160,320,3)))
-model.add(Convolution2D(32, 3, 3))
-model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.5))
-model.add(Activation('sigmoid'))
+model.add(Cropping2D(cropping=((60,30), (0,0)), input_shape=(160,320,3)))
+model.add(Lambda(lambda x: (x / 255.0) - 0.5))
+model.add(Convolution2D(24, 5, 5, subsample=(2,2)))
+model.add(ELU())
+model.add(Convolution2D(36, 5, 5, subsample=(2,2)))
+model.add(ELU())
+model.add(Convolution2D(48, 5, 5, subsample=(2,2)))
+model.add(ELU())
+model.add(Convolution2D(64, 3, 3))
+model.add(ELU())
+model.add(Convolution2D(64, 3, 3))
+model.add(ELU())
 model.add(Flatten())
-model.add(Dense(128))
-model.add(Activation('sigmoid'))
+model.add(Dense(1164))
+model.add(ELU())
+model.add(Dense(100))
+model.add(ELU())
+model.add(Dense(50))
+model.add(ELU())
+model.add(Dense(10))
+model.add(ELU())
 model.add(Dense(1))
-model.add(Activation('sigmoid'))
 
 model.compile(loss='mse', optimizer='adam')
 model.summary()
 model.fit_generator(train_generator, samples_per_epoch=len(train_samples) * 3, 
                     validation_data=validation_generator,
                     nb_val_samples=len(validation_samples) * 3, 
-                    nb_epoch=1)
+                    nb_epoch=4)
 model.save('model.h5')
