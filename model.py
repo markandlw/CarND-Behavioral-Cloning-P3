@@ -14,6 +14,7 @@ from keras.layers import Lambda, Cropping2D
 from keras.layers.advanced_activations import ELU
 
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
+import tensorflow as tf
 
 path_prefix='./data/'
 def readin_image_angle(data_row):
@@ -34,6 +35,10 @@ def readin_image_angle(data_row):
     flip_steering_right = -steering_right
 
     return [img_center, img_left, img_right, flip_left, flip_right],[steering_center, steering_left, steering_right, flip_steering_left, flip_steering_right]
+
+def resize(image):
+
+    return tf.image.resize_images(image, 66, 200)
 
 def generator(samples, batch_size=32):
     num_samples = len(samples)
@@ -62,7 +67,8 @@ train_generator = generator(train_samples, batch_size=32)
 validation_generator = generator(validation_samples, batch_size=32)
 
 model = Sequential()
-model.add(Cropping2D(cropping=((60,20), (0,0)), input_shape=(160,320,3)))
+model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
+model.add(Lambda(resize))
 model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 model.add(Convolution2D(24, 5, 5, subsample=(2,2)))
 model.add(ELU())
@@ -75,8 +81,6 @@ model.add(ELU())
 model.add(Convolution2D(64, 3, 3))
 model.add(ELU())
 model.add(Flatten())
-model.add(Dense(1164))
-model.add(ELU())
 model.add(Dense(100))
 model.add(ELU())
 model.add(Dense(50))
