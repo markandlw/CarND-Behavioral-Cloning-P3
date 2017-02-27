@@ -14,13 +14,15 @@ from keras.layers import Lambda, Cropping2D
 from keras.layers.advanced_activations import ELU
 
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-import tensorflow as tf
 
-path_prefix='./data/'
+path_prefix='./my_data/'
+
+resize_col = 200
+resize_row = 100
 def readin_image_angle(data_row):
     steering_center = data_row[3]
 
-    correction = 0.1
+    correction = 0.25
     steering_left = steering_center + correction
     steering_right = steering_center - correction
 
@@ -34,12 +36,10 @@ def readin_image_angle(data_row):
     flip_right = np.fliplr(img_right)
     flip_steering_right = -steering_right
 
-    return [img_center, img_left, img_right, flip_left, flip_right],[steering_center, steering_left, steering_right, flip_steering_left, flip_steering_right]
+    out_imgs = [img_center, img_left, img_right, flip_left, flip_right]
+    out_steering = [steering_center, steering_left, steering_right, flip_steering_left, flip_steering_right]
 
-def resize(image):
-
-    return tf.image.resize_images(image, 66, 200)
-
+    return [cv2.resize(x,(resize_col, resize_row),interpolation=cv2.INTER_AREA) for x in out_imgs],out_steering
 def generator(samples, batch_size=32):
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
@@ -67,8 +67,7 @@ train_generator = generator(train_samples, batch_size=32)
 validation_generator = generator(validation_samples, batch_size=32)
 
 model = Sequential()
-model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
-model.add(Lambda(resize))
+model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
 model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 model.add(Convolution2D(24, 5, 5, subsample=(2,2)))
 model.add(ELU())
@@ -94,5 +93,5 @@ model.summary()
 model.fit_generator(train_generator, samples_per_epoch=len(train_samples) * 5, 
                     validation_data=validation_generator,
                     nb_val_samples=len(validation_samples) * 5, 
-                    nb_epoch=3)
+                    nb_epoch=5)
 model.save('model.h5')
