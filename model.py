@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 
@@ -15,8 +16,6 @@ from keras.layers.advanced_activations import ELU
 
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
-path_prefix='./my_data/'
-
 resize_col = 200
 resize_row = 100
 def readin_image_angle(data_row):
@@ -26,9 +25,9 @@ def readin_image_angle(data_row):
     steering_left = steering_center + correction
     steering_right = steering_center - correction
 
-    img_center = cv2.cvtColor(cv2.imread(path_prefix + data_row[0].strip()),cv2.COLOR_BGR2YUV)
-    img_left = cv2.cvtColor(cv2.imread(path_prefix + data_row[1].strip()),cv2.COLOR_BGR2YUV)
-    img_right = cv2.cvtColor(cv2.imread(path_prefix + data_row[2].strip()),cv2.COLOR_BGR2YUV)
+    img_center = cv2.cvtColor(cv2.imread(data_row[0].strip()),cv2.COLOR_BGR2YUV)
+    img_left = cv2.cvtColor(cv2.imread(data_row[1].strip()),cv2.COLOR_BGR2YUV)
+    img_right = cv2.cvtColor(cv2.imread(data_row[2].strip()),cv2.COLOR_BGR2YUV)
 
     flip_left = np.fliplr(img_left)
     flip_steering_left = -steering_left
@@ -58,8 +57,13 @@ def generator(samples, batch_size=32):
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
 
+parser = argparse.ArgumentParser(description='Behavior model training.')
 
-driving_log = pd.read_csv(path_prefix + 'driving_log.csv')
+parser.add_argument('prefix', nargs='?', type=str, default='', help='Directory path which contains the image data.')
+
+args = parser.parse_args()
+
+driving_log = pd.read_csv(args.prefix + 'driving_log.csv')
 
 train_samples, validation_samples = train_test_split(driving_log, test_size=0.2)
 
