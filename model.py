@@ -19,43 +19,42 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 resize_col = 200
 resize_row = 100
 def readin_image_angle(data_row):
-    steering_center = data_row[3]
-
+    steering = data_row[3]
     correction = 0.25
-    steering_left = steering_center + correction
-    steering_right = steering_center - correction
 
-    img_center = cv2.cvtColor(cv2.imread(data_row[0].strip()),cv2.COLOR_BGR2YUV)
-    img_left = cv2.cvtColor(cv2.imread(data_row[1].strip()),cv2.COLOR_BGR2YUV)
-    img_right = cv2.cvtColor(cv2.imread(data_row[2].strip()),cv2.COLOR_BGR2YUV)
+    select = np.random.randint(3)
+    img = cv2.cvtColor(cv2.imread(data_row[select].strip()),cv2.COLOR_BGR2YUV)
 
-    flip_left = np.fliplr(img_left)
-    flip_steering_left = -steering_left
+    if select == 1:
+        steering += correction
 
-    flip_right = np.fliplr(img_right)
-    flip_steering_right = -steering_right
+    if select == 2:
+        steering -= correction
 
-    out_imgs = [img_center, img_left, img_right, flip_left, flip_right]
-    out_steering = [steering_center, steering_left, steering_right, flip_steering_left, flip_steering_right]
+    flip = np.random.randint(2)
+    if flip:
+        img = np.fliplr(img)
+        steering = -steering
 
-    return [cv2.resize(x,(resize_col, resize_row),interpolation=cv2.INTER_AREA) for x in out_imgs],out_steering
+    return cv2.resize(img,(resize_col, resize_row),interpolation=cv2.INTER_AREA),steering
+
 def generator(samples, batch_size=32):
     num_samples = len(samples)
-    while 1: # Loop forever so the generator never terminates
+    while 1:
         sklearn.utils.shuffle(samples)
-        for offset in range(0, num_samples, batch_size):
-            batch_samples = samples[offset:offset+batch_size]
+        offset = num_samples // 2
+        batch_samples = samples[offset:offset+batch_size]
 
-            images = []
-            angles = []
-            for _,batch_sample in batch_samples.iterrows():
-                feature_set,label_set = readin_image_angle(batch_sample)
-                images.extend(feature_set)
-                angles.extend(label_set)
+        images = []
+        angles = []
+        for _,batch_sample in batch_samples.iterrows():
+            img,steering = readin_image_angle(batch_sample)
+            images.append(img)
+            angles.append(steering)
 
-            X_train = np.array(images)
-            y_train = np.array(angles)
-            yield sklearn.utils.shuffle(X_train, y_train)
+        X_train = np.array(images)
+        y_train = np.array(angles)
+        yield sklearn.utils.shuffle(X_train, y_train)
 
 parser = argparse.ArgumentParser(description='Behavior model training.')
 
@@ -65,10 +64,7 @@ args = parser.parse_args()
 
 driving_log = pd.read_csv(args.prefix + 'driving_log.csv')
 
-train_samples, validation_samples = train_test_split(driving_log, test_size=0.2)
-
-train_generator = generator(train_samples, batch_size=32)
-validation_generator = generator(validation_samples, batch_size=32)
+train_generator = generator(driving_log, batch_size=50)
 
 model = Sequential()
 model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
@@ -94,8 +90,7 @@ model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
 model.summary()
-model.fit_generator(train_generator, samples_per_epoch=len(train_samples) * 5, 
-                    validation_data=validation_generator,
-                    nb_val_samples=len(validation_samples) * 5, 
-                    nb_epoch=5)
+print('{} samples'.format(len(driving_log)))
+model.fit_generator(train_generator, samples_per_epoch=24000, 
+                    nb_epoch=3)
 model.save('model.h5')
