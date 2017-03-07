@@ -64,7 +64,10 @@ args = parser.parse_args()
 
 driving_log = pd.read_csv(args.prefix + 'driving_log.csv')
 
-train_generator = generator(driving_log, batch_size=50)
+train_samples, validation_samples = train_test_split(driving_log, test_size=0.2)
+
+train_generator = generator(train_samples, batch_size=50)
+validation_generator = generator(validation_samples, batch_size=50)
 
 model = Sequential()
 model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
@@ -91,6 +94,7 @@ model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
 model.summary()
 print('{} samples'.format(len(driving_log)))
-model.fit_generator(train_generator, samples_per_epoch=24000, 
-                    nb_epoch=3)
+model.fit_generator(train_generator, samples_per_epoch=20000,
+                    validation_data=validation_generator, nb_val_samples=5000,
+                    nb_epoch=2)
 model.save('model.h5')
