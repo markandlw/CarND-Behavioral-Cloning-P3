@@ -19,6 +19,10 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 resize_col = 200
 resize_row = 100
 def readin_image_angle(data_row):
+    '''
+    Main image factory for creating augmented images.
+    Randomly select left or right image, so as image flipping.
+    '''
     steering = data_row[3]
     correction = 0.25
 
@@ -39,6 +43,9 @@ def readin_image_angle(data_row):
     return cv2.resize(img,(resize_col, resize_row),interpolation=cv2.INTER_AREA),steering
 
 def generator(samples, batch_size=32):
+    '''
+    Generator for feeding the model with processed images.
+    '''
     num_samples = len(samples)
     while 1:
         sklearn.utils.shuffle(samples)
@@ -67,6 +74,7 @@ driving_log = pd.read_csv(args.prefix + 'driving_log.csv')
 
 train_generator = generator(driving_log, batch_size=100)
 
+# Use Nvidia model, introduce ELU for nonlinearity
 model = Sequential()
 model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
 model.add(Lambda(lambda x: (x / 255.0) - 0.5))
