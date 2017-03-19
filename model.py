@@ -59,6 +59,7 @@ def generator(samples, batch_size=32):
 parser = argparse.ArgumentParser(description='Behavior model training.')
 
 parser.add_argument('prefix', nargs='?', type=str, default='', help='Directory path which contains the image data.')
+parser.add_argument('epoch', nargs='?', type=int, default=2, help='Number of epochs.')
 
 args = parser.parse_args()
 
@@ -92,5 +93,5 @@ model.compile(loss='mse', optimizer='adam')
 model.summary()
 print('{} samples'.format(len(driving_log)))
 model.fit_generator(train_generator, samples_per_epoch=20000,
-                    nb_epoch=2)
+                    nb_epoch=args.epoch)
 model.save('model.h5')
