@@ -23,7 +23,7 @@ def readin_image_angle(data_row):
     correction = 0.25
 
     select = np.random.randint(3)
-    img = cv2.cvtColor(cv2.imread(data_row[select].strip()),cv2.COLOR_BGR2YUV)
+    img = cv2.cvtColor(cv2.imread(data_row[select].strip()),cv2.COLOR_BGR2HSV)
 
     if select == 1:
         steering += correction
@@ -65,7 +65,7 @@ args = parser.parse_args()
 
 driving_log = pd.read_csv(args.prefix + 'driving_log.csv')
 
-train_generator = generator(driving_log, batch_size=50)
+train_generator = generator(driving_log, batch_size=100)
 
 model = Sequential()
 model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
