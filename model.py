@@ -17,7 +17,7 @@ from keras.layers.advanced_activations import ELU
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 resize_col = 200
-resize_row = 100
+resize_row = 160
 def readin_image_angle(data_row):
     '''
     Main image factory for creating augmented images.
@@ -76,7 +76,7 @@ train_generator = generator(driving_log, batch_size=100)
 
 # Use Nvidia model, introduce ELU for nonlinearity
 model = Sequential()
-model.add(Cropping2D(cropping=((34,0), (0,0)), input_shape=(resize_row,resize_col,3)))
+model.add(Cropping2D(cropping=((60,23), (0,0)), input_shape=(resize_row,resize_col,3)))
 model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 model.add(Convolution2D(24, 5, 5, subsample=(2,2)))
 model.add(ELU())
@@ -100,6 +100,6 @@ model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
 model.summary()
 print('{} samples'.format(len(driving_log)))
-model.fit_generator(train_generator, samples_per_epoch=20000,
+model.fit_generator(train_generator, samples_per_epoch=40000,
                     nb_epoch=args.epoch)
 model.save('model.h5')
