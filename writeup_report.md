@@ -135,3 +135,9 @@ To augment the data set, I flipped images and angles thinking that this would re
 After the collection process, I had 67223 number of data points. I then preprocessed this data by choosing center, left or right images randomly, flipped 50% of the images and resized the images to feed into the Nvidia model.
 
 I used this training data for training the model. The ideal number of epochs was 3-5 as evidenced by testing the performance on track 1. I used an adam optimizer so that manually training the learning rate wasn't necessary.
+
+## Reflections
+
+---
+
+Data is king! I may not have the best model but the model achieved the goal by being fed enough data. The fact that my model can achieve the project goal while presenting overfitting could be that it learned enough data in track 1, and it shall not generalize well in other scenarios like track 2. A test on track 2 shows that it did not do well. Introducing dropout layer and fine-grained data augmentation should help the model to generalize.
