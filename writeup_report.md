@@ -23,7 +23,7 @@ The goals / steps of this project are the following:
 [image4]: ./examples/center_recover2.jpg "Recovery Image"
 [image5]: ./examples/center_recover3.jpg "Recovery Image"
 [image6]: ./examples/center_to_flip.jpg "Normal Image"
-[image7]: ./examples/center_flipped.jpg "Flipped Image"
+[image7]: ./examples/center_flip.jpg "Flipped Image"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
